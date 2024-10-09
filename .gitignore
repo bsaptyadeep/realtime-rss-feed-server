@@ -1,0 +1,24 @@
+# Python related
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env            # Exclude .env file
+venv/            # Exclude virtual environment
+*.log            # Exclude log files
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+
+# Database
+*.sqlite3
+
+# VS Code settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS generated files
+.DS_Store
+Thumbs.db
