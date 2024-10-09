@@ -1,7 +1,10 @@
 import os
 from fastapi import APIRouter
+import json
 import httpx
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
 
 # Load environment variables from .env file
 load_dotenv()
@@ -10,30 +13,37 @@ load_dotenv()
 router = APIRouter()
 
 NYT_LIVE_FEED_BASE_URL = os.getenv("NYT_LIVE_FEED_BASE_URL")
-NYT_API_KEY = os.getenv("NYT_API_KEY")
+CNN_LIVE_FEED_BASE_URL = os.getenv("CNN_LIVE_FEED_BASE_URL")
+FOX_NEWS_LIVE_FEED_BASE_URL = os.getenv("FOX_NEWS_LIVE_FEED_BASE_URL")
+FEDERAL_REG_LIVE_FEED_BASE_URL = os.getenv("FEDERAL_REG_LIVE_FEED_BASE_URL")
 
+url_list = [
+    NYT_LIVE_FEED_BASE_URL,
+    CNN_LIVE_FEED_BASE_URL,
+    FOX_NEWS_LIVE_FEED_BASE_URL,
+    FEDERAL_REG_LIVE_FEED_BASE_URL
+]
 
-async def get_new_york_time_live_feed():
-    url = f"{NYT_LIVE_FEED_BASE_URL}?api-key={NYT_API_KEY}"
-
-    # Asynchronous HTTP GET request using httpx
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-    extracted_data = []
-
-    realtimeFeed = response.json()
-    print(realtimeFeed["results"])
-    for result in realtimeFeed["results"]:
-        title = result.get("title", "No title found")
-        abstract = result.get("abstract", "No abstract found")
-        source = result.get("source", "No source found")
-        extracted_data.append({"title": title, "abstract": abstract, "source": source})
-
+async def get_cnn_live_feed():
+    parsed_items = []
+    for url in url_list:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return {"error": "Failed to fetch RSS feed"}
+        # Parse the XML data using BeautifulSoup
+        soup = BeautifulSoup(response.content, 'lxml')
+        # Print the title and link of each item
+        items = soup.find_all('item')
+        for item in items:
+            title = item.title.text
+            link = item.guid.text
+            description = item.description.text
+            parsed_items.append({"title": title, "link": link, "description": description})
     # Return the response from the external API
-    return {"status_code": response.status_code, "data": extracted_data}
+    return parsed_items
 
 # Define the rss-feed route
 @router.get("/rss-feed")
 async def get_rss_feed():
-    new_york_time_live_feed = await get_new_york_time_live_feed()
-    return new_york_time_live_feed
+    cnn_live_feed_list = await get_cnn_live_feed()
+    return { "data": cnn_live_feed_list }
