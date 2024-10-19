@@ -8,3 +8,5 @@ lxml
 openai
 pymongo
 websockets
+motor
+python-decouple
